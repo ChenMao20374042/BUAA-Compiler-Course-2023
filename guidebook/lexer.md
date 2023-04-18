@@ -33,7 +33,7 @@ int main() {\n\tint var = 8+2;\n\tif (var != 10) {\n\t\tprintf(“error!”);\n\
 
 词法分析器作为编译器的第一部分，承担的任务就是**通过扫描输入的源程序字符串，将其分割成一个个单词，同时记录这些单词的类别信息**。而对于源程序中一些对编译没用的符号，如'\n'和注释等，词法分析器也会进行适当的处理（如忽视跳过，记录当前行号）。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_1.png" alt="lexer_1" style="zoom:40%;" />
+<img src=".\figure\lexer_1.png" alt="lexer_1" style="zoom:40%;" />
 
 如图所示，经过词法分析器的解析，我们就可以从词法分析器依次获取每个单词的信息，包括单词值和单词类别，用于后续的编译。
 
@@ -59,7 +59,7 @@ int main() {\n\tint var = 8+2;\n\tif (var != 10) {\n\t\tprintf(“error!”);\n\
 
 
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_2.png" alt="lexer_2" style="zoom:40%;" />
+<img src=".\figure\lexer_2.png" alt="lexer_2" style="zoom:40%;" />
 
 1. 初始化时，**`p`指向`source`的第一个字符**，`line=1`，其他部分为空。
 2. 解析第一个单词"int"，并设置`token`和`type`为相应的单词值和单词类别，**`p`指向下一个待解析的单词的初始字符**。
