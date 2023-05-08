@@ -296,3 +296,342 @@ define dso_local i32 @main() {
     ret i32 %36
 }
 ```
+## 2. 全局变量与局部变量
+
+### 全局变量
+本章实验涉及的文法包括：
+```c
+CompUnit ->  {Decl} FuncDef
+Decl         -> ConstDecl | VarDecl
+ConstDecl    -> 'const' BType ConstDef { ',' ConstDef } ';'
+BType        -> 'int'
+ConstDef     -> Ident '=' ConstInitVal
+ConstInitVal -> ConstExp
+ConstExp     -> AddExp
+VarDecl      -> BType VarDef { ',' VarDef } ';'
+VarDef       -> Ident 
+                | Ident '=' InitVal
+InitVal      -> Exp 
+```
+在llvm中，全局变量使用的是和函数一样的全局标识符 `@` ，所以全局变量的写法其实和函数的定义几乎一样。在本次的实验中，全局变/常量声明中指定的初值表达式必须是**常量表达式**。不妨举几个例子：
+```c
+//以下都是全局变量
+int a=5;
+int b=2+3;
+```
+生成的llvm如下所示
+```llvm
+@a = dso_local global i32 5
+@b = dso_local global i32 5
+```
+可以看到，对于全局变量中的常量表达式，在生成的llvm中需要直接算出其**具体的值**。
+
+### 局部变量
+本章内容涉及文法包括：
+```c
+Block        -> '{' { BlockItem } '}'
+BlockItem    -> Decl | Stmt
+```
+局部变量使用的标识符是 `%` 。与全局变量不同，局部变量在赋值前需要申请一块内存。在对局部变量操作的时候也需要采用**load/store**来对内存进行操作。
+同样的，举个例子来说明一下：
+```c
+//以下都是局部变量
+int a=1+2;
+```
+生成的llvm如下所示
+```llvm
+%1 = alloca i32
+%2 = add i32 1, 2
+store i32 %2, i32* %1
+```
+
+### 符号表设计与作用域
+这一章将主要考虑变量，包括**全局变量**和**局部变量**以及**作用域**的说明。不可避免地，同学们需要进行符号表的设计。
+
+涉及到的文法如下：
+```c
+Stmt -> LVal '=' Exp ';' 
+      | [Exp] ';'
+      | 'return' Exp ';'
+```
+举个最简单的例子：
+```c
+int a=1;
+int b=2+a;
+int main(){
+  int c=b+4;
+  return a+b+c;
+}
+```
+
+如果需要将上述代码转换为llvm，应当怎么考虑呢？直观来看，a和b是**全局变量**，c是**局部变量**。直观上来说，过程是首先将全局变量a和b进行赋值，然后进入到main函数内部，对c进行赋值。那么在 `return a+b+c;` 的时候，根据上个实验，llvm最后几行应该是
+```llvm
+%sumab = add i32 %a, %b
+%sumabc = add i32 %sumab, %c
+ret i32 %sumabc
+```
+问题就是，如何获取标识符 `%a，%b，%c`，这时候符号表的作用就体现出来了。简单来说，符号表类似于一个索引。通过符号表可以很快速的找到变量对应的标识符。
+
+对于上面的c语言程序，llvm生成如下：
+```llvm
+@a = dso_local global i32 1
+@b = dso_local global i32 3
+define dso_local i32 @main() {
+    %1 = alloca i32          ;分配c内存
+    %2 = load i32, i32* @b   ;读取全局变量b
+    %3 = add i32 %2, 4       ;计算b+4
+    store i32 %3, i32* %1    ;把b+4的值存入c
+    %4 = load i32, i32* @a   ;读取全局变量a
+    %5 = load i32, i32* @b   ;读取全局变量b
+    %6 = add i32 %4, %5      ;计算a+b;
+    %7 = load i32, i32* %1   ;读取c
+    %8 = add i32 %6, %7      ;计算(a+b)+c
+    ret i32 %8               ;return
+}
+```
+不难发现，对于全局变量的使用，可以直接使用全局变量的**全局标识符**（例如`@a`），而对于**局部变量**，则需要使用分配内存的标识符。由于标识符是**自增的数字**，所以快速找到对应变量的标识符就是符号表最重要的作用。同学们可以选择遍历一遍AST后造出一张统一的符号表，然后根据**完整的符号表**进行代码生成，也可以在遍历AST的同时造出一张**栈式符号表**，根据实时的栈式符号表生成相应代码。符号表存储的东西同学们可以自己设计，下面给出符号表的简略示例，同学们在实验中可以根据自己需要自行设计。
+
+同时，同学们需要注意变量的作用域，即语句块内声明的变量的生命周期在该语句块内，且内层代码块覆盖外层代码块。
+```c
+int a=1;
+int b=2;
+int c=3;
+int main(){
+  int d=4;
+  int e=5;
+  {//blockA
+    int a=7;
+    int e=8;
+    int f=9;
+  }
+  int f=10;
+}
+```
+在上面的程序中，在**blockA**中，a的值为7，覆盖了全局变量a=1，e覆盖了main中的e=5，而在main的最后一行，f并不存在覆盖，因为main外层不存在其他f的定义。
+
+同样的，下面给出上述程序的llvm代码：
+```llvm
+@a = dso_local global i32 1
+@b = dso_local global i32 2
+@c = dso_local global i32 3
+
+define dso_local i32 @main() {
+    %1 = alloca i32
+    store i32 4, i32* %1
+    %2 = alloca i32
+    store i32 5, i32* %2
+    %3 = alloca i32
+    store i32 7, i32* %3
+    %4 = alloca i32
+    store i32 8, i32* %4
+    %5 = alloca i32
+    store i32 9, i32* %5
+    %6 = alloca i32
+    store i32 10, i32* %6
+}
+```
+上述程序的符号表简略示意如下：
+
+![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/2-1.png)
+##### <p align="center">图 2-1 完整符号表与栈式符号表示意图</p>
+
+### 测试样例
+源程序
+```c
+int a=1;
+int b=2+a;
+int c=3*(b+------10);
+int main(){
+  int d=4+c;
+  int e=5*d;
+  {
+    a=a+5;
+    int b=a*2;
+    a=b;
+    int f=20;
+    e=e+a*20;
+  }
+  int f=10;
+  return e*f;
+}
+```
+llvm参考如下：
+```llvm
+@a = dso_local global i32 1
+@b = dso_local global i32 3
+@c = dso_local global i32 39
+define dso_local i32 @main() {
+    %1 = alloca i32
+    %2 = load i32, i32* @c
+    %3 = add i32 4, %2
+    store i32 %3, i32* %1
+    %4 = alloca i32
+    %5 = load i32, i32* %1
+    %6 = mul i32 5, %5
+    store i32 %6, i32* %4
+    %7 = load i32, i32* @a
+    %8 = load i32, i32* @a
+    %9 = add i32 %8, 5
+    store i32 %9, i32* @a
+    %10 = alloca i32
+    %11 = load i32, i32* @a
+    %12 = mul i32 %11, 2
+    store i32 %12, i32* %10
+    %13 = load i32, i32* @a
+    %14 = load i32, i32* %10
+    store i32 %14, i32* @a
+    %15 = alloca i32
+    store i32 20, i32* %15
+    %16 = load i32, i32* %4
+    %17 = load i32, i32* %4
+    %18 = load i32, i32* @a
+    %19 = mul i32 %18, 20
+    %20 = add i32 %17, %19
+    store i32 %20, i32* %4
+    %21 = alloca i32
+    store i32 10, i32* %21
+    %22 = load i32, i32* %4
+    %23 = load i32, i32* %21
+    %24 = mul i32 %22, %23
+    ret i32 %24
+}
+
+```
+echo $?的结果为**198**
+
+> 我相信各位如果去手动计算的话，会算出来结果是4550。然而由于echo $?的返回值只截取最后一个字节，也就是8位，所以 `4550 mod 256 = 198`
+## 3. 函数的定义及调用
+> 本章主要涉及**不含数组**的函数的定义，调用等。
+### 库函数
+涉及文法有：
+```c
+Stmt         -> LVal '=' 'getint''('')'';'
+                | 'printf''('FormatString{','Exp}')'';' 
+
+```
+
+
+首先添加**库函数**的调用。在实验的llvm代码中，库函数的声明如下：
+```llvm
+declare i32 @getint()
+declare void @putint(i32)
+declare void @putch(i32)
+declare void @putstr(i8*)
+```
+只要在llvm代码开头加上这些声明，就可以在后续代码中使用这些库函数。同时对于用到库函数的llvm代码，在编译时也需要使用llvm-link命令将库函数链接到生成的代码中。
+
+对于库函数的使用，在文法中其实就包含两句，即`getint`和`printf`。其中，`printf`包含了有Exp和没有Exp的情况。同样的，这里给出一个简单的例子：
+```c
+int main(){
+  int a;
+  a=getint();
+  printf("hello:%d",a);
+  return 0;
+}
+```
+llvm代码如下：
+```llvm
+declare i32 @getint()
+declare void @putint(i32)
+declare void @putch(i32)
+declare void @putstr(i8*)
+
+define dso_local i32 @main() {
+    %1 = alloca i32
+    %2 = load i32, i32* %1
+    %3 = call i32 @getint() 
+    store i32 %3, i32* %1
+    %4 = load i32, i32* %1
+    call void @putch(i32 104)
+    call void @putch(i32 101)
+    call void @putch(i32 108)
+    call void @putch(i32 108)
+    call void @putch(i32 111)
+    call void @putch(i32 58)
+    call void @putint(i32 %4)
+    ret i32 0
+}
+```
+不难看出，`call i32 @getint()` 即为调用getint的语句，对于其他的任何函数的调用也是像这样去写。而对于`printf`，则需要将其转化为多条`putch`和`putint`的调用，或者使用`putstr`以字符串输出。这里需要注意的是，`putch`和`putint`的参数都是 `i32` 类型，所以需要将字符串中的字符转化为对应的ascii码。
+
+### 函数定义与调用
+涉及文法如下：
+```c
+CompUnit     -> [CompUnit] (Decl | FuncDef)
+FuncDef      -> FuncType Ident '(' [FuncFParams] ')' Block 
+FuncType     -> 'void' | 'int' 
+FuncFParams  -> FuncFParam { ',' FuncFParam } 
+FuncFParam   -> BType Ident ['[' ']' { '[' Exp ']' }]
+UnaryExp     -> PrimaryExp
+                | Ident '(' [FuncRParams] ')'
+                | UnaryOp UnaryExp 
+```
+其实之前的main函数也是一个函数，即主函数。这里将其拓广到一般函数。对于一个函数，其特征包括**函数名**，**函数返回类型**和**参数**。在本实验中，函数返回类型只有 **`int`** 和 **`void`** 两种。由于目前只有零维整数作为参数，所以参数的类型统一都是`i32`。FuncFParams之后的Block则与之前主函数内处理方法一样。值得一提的是，由于每个**临时寄存器**和**基本块**占用一个编号，所以没有参数的函数的第一个临时寄存器的编号应该从**1**开始，因为函数体入口占用了一个编号0。而有参数的函数，参数编号从**0**开始，进入Block后需要跳过一个基本块入口的编号（可以参考测试样例）。
+
+当然，如果全部采用字符串编号寄存器，上述问题都不会存在。
+
+对于函数的调用，参考之前库函数的处理，不难发现，函数的调用其实和**全局变量**的调用基本是一样的，即用`@函数名`表示。所以函数部分和**符号表**有着密切关联。同学们需要在函数定义和函数调用的时候对符号表进行操作。对于有参数的函数调用，则在调用的函数内传入参数。对于没有返回值的函数，则直接`call`即可，不用为语句赋一个实例。
+
+### 测试样例
+源代码：
+```c
+int a=1000;
+int aaa(int a,int b){
+        return a+b;
+}
+void ab(){
+        a=1200;
+        return;
+}
+int main(){
+        ab();
+        int b=a,a;
+        a=getint();
+        printf("%d",aaa(a,b));
+        return 0;
+}
+```
+llvm输出参考：
+```llvm
+declare i32 @getint()
+declare void @putint(i32)
+declare void @putch(i32)
+declare void @putstr(i8*)
+@a = dso_local global i32 1000
+define dso_local i32 @aaa(i32 %0, i32 %1){
+  %3 = alloca i32
+  %4 = alloca i32
+  store i32 %0, i32* %3
+  store i32 %1, i32* %4
+  %5 = load i32, i32* %3
+  %6 = load i32, i32* %4
+  %7 = add nsw i32 %5, %6
+  ret i32 %7
+}
+define dso_local void @ab(){
+  store i32 1200, i32* @a
+  ret void
+}
+
+define dso_local i32 @main(){
+  %1 = alloca i32
+  %2 = alloca i32
+  call void @ab()
+  %3 = load i32, i32* @a
+  store i32 %3, i32* %1
+  %4 = call i32 @getint()
+  store i32 %4, i32* %2
+  %5 = load i32, i32* %2
+  %6 = load i32, i32* %1
+  %7 = call i32 @aaa(i32 %5, i32 %6)
+  call void @putint(i32 %7)
+  ret i32 0
+}
+```
+- 输入：1000
+- 输出：2200
+## 4. 条件语句与短路求值
+### 条件语句
+与或
+### 短路求值
+### 测试样例
