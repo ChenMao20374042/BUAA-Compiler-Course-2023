@@ -1,0 +1,49 @@
+void complexFunction(int n) {
+    int i,j;
+    printf("Using for loop with break statement:\n");
+    for (i = 0; i < n; i = i + 1) {
+        if (i == 5) break;
+        printf("%d ", i);
+    }
+    printf("\n");
+
+    printf("Using for loop with continue statement:\n");
+    for (i = 0; i < n; i = i + 1) {
+        if (i == 5) continue;
+        printf("%d ", i);
+    }
+    printf("\n");
+
+    printf("Using nested for loops with break statement:\n");
+    for (i = 0; i < n; i = i + 1) {
+        for (j = 0; j < n; j = j + 1) {
+            if (j == 5) break;
+            printf("(%d, %d) ", i, j);
+        }
+        printf("\n");
+    }
+
+    printf("Using nested for loops with continue statement:\n");
+    for (i = 0; i < n; i = i + 1) {
+        for (j = 0; j < n; j = j + 1) {
+            if (j == 5) continue;
+            printf("(%d, %d) ", i, j);
+        }
+        printf("\n");
+    }
+
+    printf("Using nested for loops with break and continue statements:\n");
+    for (i = 0; i < n; i = i + 1) {
+        if (i == 5) continue;
+        for (j = 0; j < n; j = j + 1) {
+            if (j == 5) break;
+            printf("(%d, %d) ", i, j);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    complexFunction(10);
+    return 0;
+}

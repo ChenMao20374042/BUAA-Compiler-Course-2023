@@ -1,0 +1,51 @@
+// 简单的运算（加减乘除模除）
+const int a = 1;
+const int b = 2;
+const int c = 3;
+//混合数组
+int l[10][10];
+int m[10][10];
+int main(){
+    //开始运算
+    int d = a - 3;
+    int e = 1 - b;
+    int f = a * b;
+    int g = a / b;
+    int h = a % b;
+    //加减乘除模除混合
+    int i = a + b * c;
+    int j = a - b / c;
+    int k = a * b % c;
+    l[0][0] = a + b;
+    l[0][1] = a - b;
+    l[0][2] = a * b + c;
+    l[0][3] = a / b - c;
+    l[0][4] = a % b * c;
+    m[0][0] = l[0][0] + l[0][1];
+    m[0][1] = l[0][1] - l[0][2];
+    m[0][2] = l[0][2] * l[0][3];
+    m[0][3] = l[0][3] / l[0][4];
+    //计算优先级
+    int n = a + b * c / d % e - f;
+    int o = a + b / c * d % e - f;
+    int p = a + b % c * d / e - f;
+    int q = a - b * c / d % e + f;
+    int r = a - b / c * d % e + f;
+    //括号测试
+    int s = (a + b) * c;
+    int t = (a - b) * c;
+    //多个括号测试
+    int u = (a + b) * (c - d);
+    int v = (a - b) * (c + d);
+    //极多括号嵌套测试
+    int w = ((a + b) * (c - d) + (e - f)) * ((g + h) * (i - j) + (k - l[0][0]));
+    int x = ((a - b) * (c + d) + (e + f)) * ((g - h) * (i + j) + (k + l[0][1]));
+    int y = ((a + b) * (c - d) - (e - f)) * ((g + h) * (i - j) - (k - m[0][2]));
+    int z;
+    z = getint();
+    printf("w + z = %d\n", w + z);
+    printf("x + z = %d\n", x + z);
+    printf("y + z = %d\n", y + z);
+    return 0;
+}
+
