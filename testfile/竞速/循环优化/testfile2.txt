@@ -1,0 +1,16 @@
+
+
+int main()
+{
+  int sum = 0;
+  int loopCount = 100;
+	int i = 0;
+    for(i = i;i<=loopCount;i = i + 1)
+  {
+    sum = sum + i;
+   
+  }
+
+  printf("%d", sum);
+  return 0;
+}
