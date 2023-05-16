@@ -1,0 +1,41 @@
+int test1() {
+    printf("test1 function called\n");
+    return 1;
+}
+
+int test2() {
+    printf("test2 function called\n");
+    return 0;
+}
+
+int main() {
+    printf("Testing && operator with true && false:\n");
+    if (test1() && test2()) {
+        printf("True\n");
+    } else {
+        printf("False\n");
+    }
+
+    printf("\nTesting && operator with false && true:\n");
+    if (test2() && test1()) {
+        printf("True\n");
+    } else {
+        printf("False\n");
+    }
+
+    printf("\nTesting || operator with true || false:\n");
+    if (test1() || test2()) {
+        printf("True\n");
+    } else {
+        printf("False\n");
+    }
+
+    printf("\nTesting || operator with false || true:\n");
+    if (test2() || test1()) {
+        printf("True\n");
+    } else {
+        printf("False\n");
+    }
+
+    return 0;
+}

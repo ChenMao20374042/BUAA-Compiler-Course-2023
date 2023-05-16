@@ -1,0 +1,29 @@
+int test1(int a) {
+    printf("test1 function called with argument %d\n", a);
+    return a % 2;
+}
+
+int test2(int a) {
+    printf("test2 function called with argument %d\n", a);
+    return a % 3;
+}
+
+int main() {
+    int i,j;
+    for (i = 0; i < 5; i = i + 1) {
+        for (j = 0; j < 5; j = j + 1) {
+            if (i == 3 && test1(j)) {
+                printf("Breaking inner loop at i = %d, j = %d\n", i, j);
+                break;
+            }
+            if (j == 2 || test2(i)) {
+                printf("Continuing inner loop at i = %d, j = %d\n", i, j);
+                continue;
+            }
+            printf("(%d, %d) ", i, j);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}

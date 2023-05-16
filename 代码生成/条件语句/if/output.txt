@@ -1,0 +1,12 @@
+Enter the number of times you want to call the functions: Calling function func2 with argument 1
+Result: 1
+Calling function func6 with arguments 1 and 11
+Result: 0
+Calling function func7
+Result: 6
+Calling function func2 with argument 2
+Result: 2
+Calling function func6 with arguments 2 and 12
+Result: 0
+Calling function func7
+Result: 100
