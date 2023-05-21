@@ -47,7 +47,7 @@ int main() {\n\tint var = 8+2;\n\tif (var != 10) {\n\t\tprintf(“error!”);\n\
 
 词法分析器作为编译器的第一部分，承担的任务就是**通过扫描输入的源程序字符串，将其分割成一个个单词，同时记录这些单词的类别信息**。而对于源程序中一些对编译没用的符号，如'\n'和注释等，词法分析器也会进行适当的处理（如忽视跳过，记录当前行号等）。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_1.png" alt="lexer_1" style="zoom:40%;" />
+<img src=".\figure\lexer_1.png" alt="lexer_1" style="zoom:40%;" />
 
 如图所示，经过词法分析器的解析，我们就可以从词法分析器依次获取每个单词的信息，包括单词值和单词类别，用于后续的编译。
 
@@ -71,9 +71,7 @@ int main() {\n\tint var = 8+2;\n\tif (var != 10) {\n\t\tprintf(“error!”);\n\
 
 此外，也可以根据实际需要额外添加其他部分。下面我们来看词法分析器大致的工作过程（黄色部分为本次解析的部分，灰色部分为已经解析完成的部分）。
 
-
-
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_2.png" alt="lexer_2" style="zoom:40%;" />
+<img src=".\figure\lexer_2.png" alt="lexer_2" style="zoom:40%;" />
 
 1. 初始化时，**`p`指向`source`的第一个字符**，`line=1`，其他部分为空。
 2. 解析第一个单词"int"，并设置`token`和`type`为相应的单词值和单词类别，**`p`指向下一个待解析的单词的初始字符**。
@@ -90,13 +88,13 @@ int main() {\n\tint var = 8+2;\n\tif (var != 10) {\n\t\tprintf(“error!”);\n\
 
 这里用一个简单的例子来说明FSA的工作流程。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_3.png" alt="lexer_3" style="zoom:40%;" />
+<img src=".\figure\lexer_3.png" alt="lexer_3" style="zoom:40%;" />
 
 上图是一个用于识别"hello"和"here"两个单词的FSA，初始时FSA处于起始状态$q_0$，后续每读入一个字符$a$，都将根据当前状态和$a$进行一次状态转移（即沿着图中的对应边进入下一个状态），在到达$q_5$或$q_7$后，FSA就成功识别了一个"hello"或"here"单词。需要注意的是，在读入"he"时，我们不能判断当前这个单词是"hello"还是"here"，需要根据读入的下一个字符进行判断并转移到不同的状态分支（对应图中的$q_2$）。此外，这个例子也没有考虑异常情况，如读入字符'z'。
 
 那么，FSA和我们的词法分析器有什么关系呢？不难发现，词法分析的单词中，很多都具有特定的结构：保留字和许多运算符号具有固定的字符串值，如main，break，+，&&，这些固定的串值可以通过类似上面例子的FSA识别；标识符和常数具有规定的结构，如标识符由一个字母或下划线开始，后面跟若干个字母或数字或下划线（如_a1_2b3），而常数则由数字开始，后面跟若干个数字（如123），虽然它们没有固定的串值，但是也可以通过FSA来进行识别。例如，下图是一个识别标识符的FSA。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\lexer_4.png" alt="lexer_4" style="zoom:40%;" />
+<img src=".\figure\lexer_4.png" alt="lexer_4" style="zoom:40%;" />
 
 因此，我们完全可以对每种单词都构造一个小的FSA，最后再将它们合成一个大的FSA，帮助我们的词法分析器识别所有的单词。
 
@@ -171,7 +169,7 @@ a + (3 + b) * 2
 
 我们则可以建立如下的语法树：
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\parser_1.png" alt="parser_1" style="zoom:40%;" />
+<img src=".\figure\parser_1.png" alt="parser_1" style="zoom:40%;" />
 
 语法树展现了**从上到下的推理过程**，即我们是如何从一个语法成分推理出我们的句子（在上述例子中，从Exp推理出`a+(3+b)*2`），也就是语法树从根开始往下生长的过程；另一方面，语法树还展现了**从下到上的归约过程**，即我们是如何从一个句子不断地“合成”，最终合并成一个语法成分的（在上述例子中，从`a+(3+b)*2`最终合成Exp语法成分），也就是语法树从叶子结点向上不断合并的过程。
 
@@ -189,7 +187,7 @@ a + (3 + b) * 2
 
 对于人来说，可以很容易地确定表达式的运算顺序。但是，从计算机角度而言，要编写一个程序仅仅根据这个线性字符串来确定运算的顺序是比较困难的，尤其是当表达式更为复杂的时候。如果我们建立了语法树，则可以很轻松地利用递归等方法来进行计算。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\parser_2.png" alt="parser_2" style="zoom:40%;" />
+<img src=".\figure\parser_2.png" alt="parser_2" style="zoom:40%;" />
 
 例如，在上面的例子中，我们要求表达式Exp的值（图中序号1），那么我们只需要求出AddExp（序号2）和MulExp（序号3）的值并将它们相加即可。要求MulExp（序号3）的值，我们只需要求出MulExp（序号4）和UnaryExp（序号5）的值并将它们相乘即可。同样地，要求MulExp（序号4）的值，我们只需要求出AddExp（序号6）和MulExp（序号7）的值并将它们相乘即可。对于每种语法成分的处理，如AddExp和MulExp的计算求值，我们都可以采用递归的方法很方便地实现，而且**语法树的层次结构自然保证了计算顺序的正确性**。
 
@@ -223,7 +221,7 @@ parseA() {
 
 如下图所示，解析A的子程序分别调用解析B和C的子程序，得到了两棵蓝色的子树，再将两棵子树和终结符'+'合并为绿色的子树（即语法成分A的语法树）。而**在解析A的子程序中，我们并不关心解析B和C的子程序究竟做了什么，只关注其返回的结果。**
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\parser_3.png" alt="parser_3" style="zoom:60%;" />
+<img src=".\figure\parser_3.png" alt="parser_3" style="zoom:60%;" />
 
 当然，解析A的子程序也可能被其他子程序调用，它们也不关心解析A的子程序究竟做了什么。而且解析A的子程序在调用其他子程序时，可能会再次调用解析A的子程序，例如以下文法：
 
@@ -521,7 +519,36 @@ getelementptr
 
 ### （一）动态内存管理
 
+在生成目标代码时，由于目标代码在执行时是动态的，而编译过程是静态的，因此我们必须采用动态内存管理的方法来在编译过程中合理地进行内存分配。例如下面这段代码，在编译时我们无法确定`fibo()`会调用几次，因此不可能直接完成静态的内存分配。
 
+```c
+int fibo(int n) {
+	if(n <= 1) return 1;
+	int x = fibo(n-1);
+	int y = fibo(n-2);
+	return x+y;
+}
+
+int main() {
+	int n;
+	n = getint();
+	n = fibo(n);
+	printf("%d",n);
+	return 0;
+}
+```
+
+实现动态的内存分配，往往需要借助于活动记录（Activity Record, AR）这种结构。通常来说，活动记录是为一个过程的一次执行所分配的一块连续内存空间。这里的过程在我们的文法中可以理解为Block，也就是说我们为每一个Block分配一个AR。这块内存空间包含该过程执行所需的数据（如变量、临时变量等），同时还包含一些信息（如返回地址等）。通常来说，AR具有如下的结构。
+
+<img src=".\figure\classic_AR.png" alt="./figure/stack.png" style="zoom: 67%;" />
+
+其中，数据区用于存储定义的变量或计算过程中的临时变量。显式参数区用于函数传参。隐式参数区包含返回地址、返回值、调用者AR基地址等，主要用于该过程执行完毕后返回调用者。display区中包含着对外层活动记录的索引，可以理解为对外层block的AR的索引，便于访问在外层block定义的变量。
+
+AR的分配主要采用栈式结构，即进入一个block后会为其分配一个AR，并设置好AR中相应的部分，而在离开一个block后会收回为其分配的AR。
+
+在静态的编译过程中，我们可以借助AR来动态管理内存。比如要访问变量，我们只需要通过AR中的信息来进行相对寻址（通过display区找到外层block的活动记录基地址，再加上变量的偏移地址），而不需要计算出绝对地址（也不可能计算得出来）。
+
+当然，上面提到的活动记录是一种通用的动态存储管理方法，具体实现上可能因不同目标代码而异，比如MIPS中可能通过\$fp和\$sp寄存器来寻址和管理，pcode中可能通过动态链和静态链来寻址，你可以根据自己的需要在原有基础上设计活动记录的结构和动态存储管理的方法，在指导书中我们也给出了相应的示例。
 
 ### （二）Pcode代码
 
@@ -542,7 +569,7 @@ int a = 1;
 printf("%d", (a+2)*3);
 ```
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\stack.png" alt="./figure/stack.png" style="zoom: 67%;" />
+<img src=".\figure\stack.png" alt="./figure/stack.png" style="zoom: 67%;" />
 
 栈式虚拟机的栈变化如上图所示（黄色为栈顶，蓝色为次栈顶）：
 
@@ -572,9 +599,9 @@ printf("%d", (a+2)*3);
 
 ##### （1）Pcode的活动记录
 
-前面介绍了动态内存管理的相关知识。在实现Pcode的动态内存管理时，活动记录有些许不同，主要是display区分成静态链（SL）和动态链（DL），同时Pcode代码的执行和这两个部分有很大的关系。Pcode动态内存管理一个典型的活动记录AR结构如下图所示。
+前面介绍了动态内存管理的相关知识。在实现Pcode的动态内存管理时，活动记录和前面提到的AR结构有些许不同，主要是动态链和静态链两个部分，同时Pcode代码的执行和这两个部分有很大的关系。Pcode动态内存管理一个典型的活动记录AR结构如下图所示。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\AR.png" alt="./figure/stack.png" style="zoom: 67%;" />
+<img src=".\figure\AR.png" alt="./figure/stack.png" style="zoom: 67%;" />
 
 在栈式虚拟机中，一个活动记录主要包含以下几种数据：
 
@@ -612,7 +639,7 @@ int main() {				// block1
 
 如下图所示，在程序执行到block3时，内层中存在3个AR，对应三个block。图中只简单画出了AR的局部变量区和静态链SL，黑色加粗表示AR基地址。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\static_link.png" alt="./figure/stack.png" style="zoom: 67%;" />
+<img src=".\figure\static_link.png" alt="./figure/stack.png" style="zoom: 67%;" />
 
 在程序执行到block3中的1处时，此时需要引用变量b，但是变量b在当前AR（AR3）中并没有定义，因此通过SL3找到AR2，发现在AR2中也没有变量b的定义，再次通过SL2找到AR1，在AR1中发现了变量b的定义。事实上，从源程序中也可以发现，引用的确实是block1定义的变量b。在执行到2处时，引用变量a，类似上面的过程，在AR2中找到变量a的定义，说明引用的是此处的变量a。上述过程说明，我们只要沿着静态链找，找到的第一个定义点，就是对应的变量定义。
 
@@ -743,7 +770,7 @@ int main() {
 
 对于这种情况，建议先读取形参的值作为绝对基地址（图a），然后由绝对基地址+偏移值得到绝对地址存储在栈顶，来进行绝对寻址（图c）。注意，在绝对地址寻址时，可以将LOD/STO指令中的level和addr设置为特殊值以示区分。
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\abs_addr.png" alt="./figure/stack.png" style="zoom: 67%;" />
+<img src=".\figure\abs_addr.png" alt="./figure/stack.png" style="zoom: 67%;" />
 
 下面给出上面例子中`func()`一种供参考的pcode代码。
 
@@ -794,7 +821,7 @@ int main() {
 }
 ```
 
-<img src="C:\Users\Charles\Desktop\学校文件\compiler course\guidebook\figure\call_ret.png" alt="./figure/stack.png" style="zoom: 67%;" />
+<img src=".\figure\call_ret.png" alt="./figure/stack.png" style="zoom: 67%;" />
 
 - 图（a）：main中准备好三个参数，存储在栈顶，准备调用add()
 - 图（b）：执行CAL指令，为函数分配AR，设置返回地址、SL、DL，同时把参数填入到参数区，更新PC、SP、MP寄存器。注意，分配的AR可以直接覆盖原本栈顶的参数。
