@@ -1,0 +1,47 @@
+int a = 3;
+int b = 5;
+const int a0 = 10, b0 = 5;
+int d0;
+int d1;
+int d2;
+int d3;
+int d4;
+int d5;
+int d6;
+int d7;
+int d8;
+int d9;
+int d10;
+int d11;
+int d12;
+const int d13 = 1;
+const int d14 = 2;
+const int d15 = 3;
+const int d16 = 4;
+const int d17 = 5;
+const int d18 = 6;
+int d19;
+int d20;
+int d21;
+int d22;
+const int d23 = 7, d24 = 7;
+int d25;
+int d26;
+const int d27 = 8, d28 = 8, d29 = 8, d30 = 9, d31 = 9, d32 = 9, d33 = 10, d34 = 10, d35 = 10, d36 = 11, d37 = 12;
+int d38;
+int d39, d40, d41, d42, d43, d44, d45, d46, d47, d48, d49;
+
+
+
+int main(){
+    int a, b, _c;
+    a = 1;
+    b = 2;
+    _c = 3;
+    const int a2 = 10, b2 = 5;
+    printf("a = %d, b = %d\n", a, b);
+    const int _c2_1_32_adsa_qwe = 3;
+    const int _c2_1_32_adsa_qwe2 = 3;
+    printf("_c2_1_32_adsa_qwe = %d, _c2_1_32_adsa_qwe2 = %d\n", _c2_1_32_adsa_qwe, _c2_1_32_adsa_qwe2);
+    return 0;
+}

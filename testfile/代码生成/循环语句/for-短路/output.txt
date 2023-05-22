@@ -1,0 +1,41 @@
+test2 function called with argument 0
+(0, 0) test2 function called with argument 0
+(0, 1) Continuing inner loop at i = 0, j = 2
+test2 function called with argument 0
+(0, 3) test2 function called with argument 0
+(0, 4) 
+test2 function called with argument 1
+Continuing inner loop at i = 1, j = 0
+test2 function called with argument 1
+Continuing inner loop at i = 1, j = 1
+Continuing inner loop at i = 1, j = 2
+test2 function called with argument 1
+Continuing inner loop at i = 1, j = 3
+test2 function called with argument 1
+Continuing inner loop at i = 1, j = 4
+
+test2 function called with argument 2
+Continuing inner loop at i = 2, j = 0
+test2 function called with argument 2
+Continuing inner loop at i = 2, j = 1
+Continuing inner loop at i = 2, j = 2
+test2 function called with argument 2
+Continuing inner loop at i = 2, j = 3
+test2 function called with argument 2
+Continuing inner loop at i = 2, j = 4
+
+test1 function called with argument 0
+test2 function called with argument 3
+(3, 0) test1 function called with argument 1
+Breaking inner loop at i = 3, j = 1
+
+test2 function called with argument 4
+Continuing inner loop at i = 4, j = 0
+test2 function called with argument 4
+Continuing inner loop at i = 4, j = 1
+Continuing inner loop at i = 4, j = 2
+test2 function called with argument 4
+Continuing inner loop at i = 4, j = 3
+test2 function called with argument 4
+Continuing inner loop at i = 4, j = 4
+

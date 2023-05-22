@@ -1,0 +1,17 @@
+Testing && operator with true && false:
+test1 function called
+test2 function called
+False
+
+Testing && operator with false && true:
+test2 function called
+False
+
+Testing || operator with true || false:
+test1 function called
+True
+
+Testing || operator with false || true:
+test2 function called
+test1 function called
+True
