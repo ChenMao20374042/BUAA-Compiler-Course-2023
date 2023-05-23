@@ -1,0 +1,11 @@
+//函数调用顺序
+int func_p()
+{
+	printf("1");
+	return 8;
+}
+int main()
+{
+	printf("%d,%d,%d",5,func_p(),9);
+	return 0;
+}

@@ -1,0 +1,89 @@
+const int hwc1 = 10, hwc2 = 5 + 5 - 4, testc = 0;
+const int a1 = 0,  a2 = 2;
+const int hwc3[5] = {0,0,0,0,0};
+const int hwc4[10] = {hwc1,0,0,0,0,0,0,0,0,0};
+const int hwc5[2][2] = {{0, 0}, {0, 10}};
+int hwv1 = 0, hwv2 = 0, test = 0;
+int b1, b2;
+int hwv3 = (56 - 51) * 3;
+int hwv4[5] = {7, 8, 9, 10, 11};
+int hwv5[2][2] = {{10, 10}, {0, 1}};
+
+
+int add(int a, int b) {
+    return a + b;
+}
+
+void change_hwv1() {
+    hwv1 = 10;
+    return;
+}
+
+void for_stmt() {
+    ;
+}
+
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    else {
+        return b;
+    }
+return b;
+}
+
+int get10() {
+    return 0;
+}
+
+void noneFunc() {}
+
+int get_first(int a[]) {
+    return a[0];
+}
+
+int get_first_add(int a[], int b[][2]) {
+    return a[0] + b[0][0];
+}
+
+int addAll(int a, int b, int c, int d) {
+    return a + b + c;
+}
+
+int main() {
+    int input;
+    input = getint();
+    int b = hwc1 + input + get_first(hwv4);
+    printf("20231074\n");
+    change_hwv1();
+    b = add(hwv1, b);
+    int i = 0;
+    if (-b < 0 && !i) {
+        b = b + 1;
+    }
+ if (addAll(+b, input, i, hwv2) == 10) {
+        i = i + 1;
+    }
+    printf("%d\n", b);
+    for (;i <= 10 && b <= 27;) {
+        i = i + 1;
+        if ( input !=  10 - 5 || b >= 25|| get_first_add(hwv4, hwv5) == 7) break;
+        if ((b + 10) * 5 > 0 || max(b, hwv4[3]) > 10) {
+            continue;
+        }
+
+    }
+    int temp = get_first_add(hwv4, hwv5) * 5;
+    int temp2 = 40 / 5;
+    int temp3 = add(b, temp) % 10 + get10() * 4;
+
+    printf("%d\n", temp + temp2 + temp3);
+        printf("hwc5 last one is %d\n", hwc5[1][1]);
+    printf("temp is %d\n", temp);
+    printf("temp2 is %d\n", temp2);
+    printf("temp3 is %d\n", temp3);
+    printf("hwv1 is %d\n", hwv1);
+    printf(">!+-\n");
+    return 0;
+}

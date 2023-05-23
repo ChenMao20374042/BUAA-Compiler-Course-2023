@@ -1,0 +1,20 @@
+//printf,explanatory note
+int a;
+int b = 114514;
+/*cxk
+//ji ni tai mei
+java python ccyt
+*/
+/**/
+int main() {
+/*nihao hello li hua, I would appreciate it  if you bulabula*/
+	int a = 5;
+	int c = b - a;
+	//zood LTC
+/*
+	printf("HELLO WORLD\n");
+	printf("114514\n");
+*/
+	printf("%d\n%d %d\n", a, b, c);
+	return 0;
+}

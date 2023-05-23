@@ -1,0 +1,40 @@
+int main()
+{
+	int n ;
+	int i ;
+	int input ;
+	int sum ;
+	int judge=0 ; 
+	int k ;
+	input = getint();
+	for (n=1;n<input;n = n + 1)
+	{
+		sum=0 ;
+		for(i=n ;i<input ;i = i + 1)
+		{
+			sum+=i ;
+			if (sum==input)
+			break ;
+			else if (sum>input)
+			break ;
+			else
+			continue ;
+		}
+		if (sum==input)
+		{
+			judge=1 ;
+			break ;
+		}
+		else 
+		continue ;
+	}
+	if(judge)
+	{
+		printf("%d=%d",input,n) ;
+		for (k=1;k<=(i-n);k++)
+		printf("+%d",n+k) ;
+	}
+	else
+	printf("No Answer") ;
+	return 0 ;
+}

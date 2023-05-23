@@ -1,0 +1,58 @@
+//函数定义，多形参, getint,printf,if
+
+int g = 0;
+int func_1()
+{
+	int a = getint();
+	printf("%d", a);
+	return a;
+}
+int func_2(int param1)
+{
+	int a = func_1()+param1;
+	printf("%d",a);
+	return a;
+}
+int func_3(int param1, int param2)
+{
+	int a = func_2(param1)+param2;
+	printf("%d",a);
+	return a;
+}
+int func_4(int param1, int param2, int param3)
+{
+	int a = func_3(param1, param2)+param3;
+	printf("%d",a);
+	return a;
+}
+void func_v1()
+{
+	int a = getint();
+	g = a;
+	printf("%d", g);
+}
+void func_v2(int param1)
+{
+	if(g == 0) func_v1();
+	g = param1+g;
+	printf("%d",g);
+}
+void func_v3(int param1, int param2)
+{
+	func_v2(param1);
+	g = param2+g;
+	printf("%d",g);
+}
+void func_v4(int param1, int param2, int param3)
+{
+	func_v3(param1, param2);
+	g = param3+g;
+	printf("%d",g);
+}
+int main()
+{
+	printf("%d",func_4(1,2,3));
+	func_v4();
+	printf("%d",g);
+	return 0;
+}

@@ -1,0 +1,12 @@
+//return 一个Exp
+
+int func()
+{
+	int a[5] = {1,2,3,4,5};
+	return a[1]+a[2]/a[3]*a[3]%a[4];
+}
+int main()
+{
+	printf("%d",func());
+	return 0;
+}
