@@ -840,7 +840,7 @@ MulExp     → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
 UnaryExp   → PrimaryExp | UnaryOp UnaryExp 
 PrimaryExp → '(' Exp ')' | Number
 UnaryOp    → '+' | '−'
-``` 
+```
 对于常量表达式，这里只包含常数的四则运算，正负号操作。这时候就需要用到之前的Value思想。举个例子，对于 `1+2+3*4`，根据文法生成的AST样式如下
 ![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/1-1.png)
 ##### <p align="center">图 1-1 简单四则运算AST参考图</p>
@@ -2596,6 +2596,89 @@ $$
 ![2dbfcab580855e47c6413e1720832de.png](https://s2.loli.net/2023/04/25/Hct4UkTvDELsnKp.png)
 
 ### （三）Function Inline(函数内联) （王宇奇 5.2完成）
+
+#### 概述
+
+程序中的一次函数调用，除去函数内部执行造成的开销，会产生很多的额外开销，如
+
+- 保存和恢复现场
+- 参数传递
+- 跳转到被调用函数，以及完成执行后返回
+
+而对于非递归，且没有调用与递归相关函数的函数，我们可以将其内部的执行指令嵌入到调用它的函数中，这种优化，我们叫做函数内联。对于C/C++，我们可以通过在函数前标明inline来提示编译器对某函数进行内联。这里我们举一个优化的例子：
+
+```
+//	源程序
+int func(int x){
+	return x + 5;
+}
+
+int main(){
+	int x = 5;
+	return func(x);
+}
+```
+
+```
+//	没有使用内联优化的llvm(经过mem2reg)
+declare void @memset(i32*, i32, i32)
+declare i32 @printf(i8*, ...)
+declare i32 @getint()
+
+define i32 @func(i32 %0) {
+%1:
+	%2 = add i32 %0, 5
+	ret i32 %2
+}
+
+define i32 @main() {
+%0:
+	%1 = call i32 @func(i32 5)
+	ret i32 %1
+}
+```
+
+```
+//	经过内联优化的llvm(mem2reg + function inline)
+declare void @memset(i32*, i32, i32)
+declare i32 @printf(i8*, ...)
+declare i32 @getint()
+
+define i32 @main() {
+%0:
+	br label %1
+%1:
+	%2 = add i32 5, 5
+	br label %3
+%3:
+	ret i32 %2
+}
+
+```
+
+#### 实现
+
+##### dfs端点函数
+
+我们这里只介绍较为简单的函数内联，不涉及复杂的递归函数展开，因此我们内联的目标函数要满足以下几个条件：
+
+- 不是递归函数
+- 不调用与递归函数有关的函数
+
+我们可以以递归的方案标记所有满足以上条件的函数，这一步的目标是寻找到我们准备内联的函数集合
+
+##### inline single function
+
+内联函数的过程中，最困难的部分在于维护中端module的一些数据结构。我们将一个函数的内联主要分为以下几个步骤：
+
+- 在调用者的callInst处插入一个新的basicblock(从这里开始进入内联函数)
+- 在这个新的basicblock里填充指令，即被内联函数的指令
+- 删除callInst并修正函数之间的调用关系
+- 修正basicblock的前驱后继关系
+- 将调用函数的形式参数换为为传入参数
+- 处理被内联的函数中的ret和call指令，多个ret合并成一条phi指令
+
+以上是一个参考的工作流程，实际情况肯定会有所出入，请同学们参照自己的架构进行修改。
 
 ### （四）DCE(死代码删除) （王宇奇 5.9完成）
 
