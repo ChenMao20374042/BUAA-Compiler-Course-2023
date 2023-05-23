@@ -1,0 +1,16 @@
+
+
+int main()
+{
+  int sum = 0;
+  int loopCount = 10000000;
+  int i = 0;
+  while(i<=loopCount)
+  {
+    sum = sum + i % 1111 + i / 11111;
+    i = i + 10000;
+  }
+
+  printf("%d", sum);
+  return 0;
+}
