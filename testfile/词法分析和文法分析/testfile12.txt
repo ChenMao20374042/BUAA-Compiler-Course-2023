@@ -1,0 +1,31 @@
+int judge (int num)
+{
+	int i ;
+	int k=1 ;
+	for(i=2;i<num;i = i+ 1)
+	{
+		if(num%i==0)
+			k=0 ;
+	}	
+	return k ;
+}
+int rev(int num)
+{
+	int re=0 ;
+	for(;num!=0;)
+	{
+		re=re*10+num%10 ;
+		num=num/10 ;
+	}
+	return re ;
+}
+int main()
+{
+	int input ;
+	input = getint(); 
+	if(judge(input)&&judge(rev(input)))
+	printf("yes") ;
+	else
+	printf("no") ;
+	return 0 ;
+}

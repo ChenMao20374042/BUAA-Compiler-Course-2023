@@ -3,7 +3,7 @@ const int a = 0, b = 9, c[b] = {1,2,3,4,5,6,7,8,9};
 int main()
 {
 	const int e = a+b;
-	int d = e - a*b/b+ e%3 + -5 + --5 + c[e-1];
+	int d = e - a*b/b+ e%3 + -5 + -5 + c[e-1];
 	int f, g[10] = {9,8,7,6,5,4,3,2,1,0}, h[15];
 	h[3] = d;
 	printf("%d",h[3]+g[6]);

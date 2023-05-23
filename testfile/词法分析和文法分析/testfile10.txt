@@ -1,0 +1,23 @@
+//for for, printf Exp
+int i = 0;
+void testFunc() {
+	int abc = 56;
+	int ea = 14;
+	printf("%d\n", abc + ea * 50 + i);
+	return ;
+}
+int main() {
+	int sum[16][16];
+	int j;
+	for (i = 0; i < 15; i = i + 1) {
+		for (j = 0; j < 15; j = j + 1) {
+			sum[i][j] = i + j;
+		}
+	}
+	for (i = 0; i < 15; i = i + 1) {
+		for (j = 0; j < 15; j = j + 1) {
+			printf("sum[%d][%d] = %d\n", i, j, sum[i][j]);
+		}
+	}
+	return 0;
+}
