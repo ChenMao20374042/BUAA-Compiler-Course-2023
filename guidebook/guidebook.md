@@ -641,8 +641,6 @@ print_string,hello,_,_
 维护符号表是编译器中的重要工作之一，它为编译器的各个模块提供必要的信息，并为代码生成过程提供了必要的支持。通过正确地维护符号表，可以保证编译器生成的中间代码的正确性和有效性。
 
 ### （三）llvm
-从这一部分开始，将正式开始进入**代码生成**阶段。课程组给出了三种目标码，分别是生成到 **`PCode`** ，**`LLVM IR`** ，以及 **`MIPS`** 。写MIPS需要额外进行**代码优化**的操作。这里建议有时间的同学们可以去提前调研一下这几种代码再进行选择。由于理论课上，以及编译原理的教材上主要介绍了**四元式**，且在课本最后也介绍了PCode，所以采用PCode作为目标码的同学可以主要参考**编译原理教材**。
-
 **`LLVM`** 可能看上去上手比较困难，毕竟相信大部分同学是第一次接触，而在往年的编译原理课程中，LLVM的代码生成是软件学院的课程要求，指导书也是针对往届软件学院的编译原理实验。在2022年与计算机学院合并之后，课程组虽然也添加了LLVM的代码生成通道，但是由于课程合并后，例如**文法，实验过程，实现要求**等的不同，课程组同学在去年实验中收到了许许多多同届同学关于LLVM的问题，包括**看不懂指导书，无从下手**等问题，所以在今年的指导书中将作出以下改进：
 - 根据今年的实验顺序，**重新编排**每一个小实验部分的顺序，使得同学们在实验过程中更加顺畅。
 - 对每一个部分进行**相关的说明**，帮助同学们更好地理解LLVM的代码生成过程。
@@ -670,7 +668,6 @@ print_string,hello,_,_
 
 ![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/0-1.png)
 
-##### <p align="center">图 0-1 三端设计示意图</p>
 
 官网对这张设计图的描述只有一个单词 **Retargetablity**，译为**可重定向性**或**可移植性**。通俗理解，如果需要移植编译器以支持新的源语言，只需要实现一个新的前端，但现有的优化器和后端可以重用。如果不将这些部分分开，实现一种新的源语言将需要从头开始，因此，不难发现，支持 $N$ 个目标和 $M$ 种源语言需要 $N×M$ 个编译器，而采用三端设计后，中端优化器可以复用，所以只需要 $N+M$ 个编译器。例如同学们熟悉的Java中的 **`JIT`** ， **`GCC`** 都是采用这种设计。
 
@@ -814,10 +811,9 @@ $ lli out.ll
 
 - Module ID：指明 **`Module`** 的标识
 - source_filename：表明该Module是从什么文件编译得到的。如果是通过链接得到的，此处会显示 `llvm-link`
-- target datalayout 和 target triple 是程序标签属性说明，和硬件/系统有关。其各个部分说明如下图所示。
+- target datalayout 和 target triple 是程序标签属性说明，和硬件/系统有关。其本身也有一套相应的文法，各个部分说明如下图所示，感兴趣的同学可以自行查阅资料。
 
 ![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/0-2.png)
-##### <p align="center">图 0-2 target解释</p>
 
 - `@a = dso_local global i32 1, align 4`：全局变量，名称是a，类型是i32，初始值是1，对齐方式是4字节。dso_local 表明该变量会在同一个链接单元内解析符号。
 - `define dso_local i32 @add(i32 %0, i32 %1) #0`：函数定义。其中第一个i32是返回值类型，%add是函数名；第二个和第三个i32是形参类型，%0，%1是形参名。
@@ -827,8 +823,9 @@ $ lli out.ll
 - %7 = add i32 %5, %6：随便拿上面一条指令来说，%7是一个临时寄存器，是Instruction的实例，它的操作数里面有两个值，一个是%5，一个是%6。%5和%6也是临时寄存器，即前两条Instruction的实例。
 
 下面给出一个Module的主要架构，可以发现，LLVM中几乎所有的结构都可以认为是一个 **`Value`** ，结构与结构之间的Value传递可以简单理解为继承属性和综合属性。而 **`User`** 类和 **`Use`** 类则是LLVM中的重要概念，简单理解就是，User类存储使用Value的列表，而Use类存储Value和User的使用关系，这可以让User和Value快速找到对方。
+
 ![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/0-3.png)
-##### <p align="center">图 0-3 LLVM架构简图</p>
+
 这其中架构的设计，是为了方便LLVM的优化和分析，然后根据优化过后的Module生成后端代码。同学们可以根据自己的需要自行设计数据类型。但如果只是想生成到LLVM的同学，这部分内容其实没有那么重要，可以直接面向AST生成代码。
 
 对于一些常用的Instructions，下面给出示例。对于一些没有给出的，可以参考[LLVM IR指令集](https://llvm.org/docs/LangRef.html#instruction-reference)。
@@ -854,8 +851,10 @@ $ lli out.ll
 | ret     | `ret <type> <value> `  ,`ret void  ` | 退出当前函数，并返回值 |
 
 ##### 一些说明
-- 如果目标生成到LLVM语言的同学请注意，clang 默认生成的虚拟寄存器是**按数字顺序**命名的，LLVM 限制了所有数字命名的虚拟寄存器必须严格地**从 0 开始递增**，且每个函数参数和基本块都会占用一个编号。如果你不能确定怎样用数字命名虚拟寄存器，请使用**字符串命名**虚拟寄存器。
-- 由于本指导书的大量测试样例都是LLVM IR的代码，所以指导书主要讲述通过 **`AST`** 生成对应的代码。想通过LLVM IR的同学可以根据对应的 **`Module`** 结构自行存储数据，然后根据Module生成对应的LLVM IR代码自测。
+- 这一部分的代码生成的目标，即输入 **`AST`**（或者**四元式**） ，输出一个 **`Module`**（便于继续生成到MIPS） 或直接输出 **`LLVM IR`** 代码。想通过LLVM IR生成到MIPS的同学可以根据对应的 **`Module`** 结构自行存储数据，然后根据Module生成对应的LLVM IR代码自测正确性。
+- 目标生成到LLVM语言的同学请注意，clang 默认生成的虚拟寄存器是**按数字顺序**命名的，LLVM 限制了所有数字命名的虚拟寄存器必须严格地**从 0 开始递增**，且每个函数**参数和基本块**都会占用一个编号。如果不能确定怎样用数字命名虚拟寄存器，请使用**字符串命名**虚拟寄存器。
+- 本章主要讲述通过 **`AST`** 生成对应的代码，这也是LLVM官网的默认推荐逻辑，当然同学们也可以通过自行设计的**四元式**生成LLVM。本质上LLVM其实是个**三地址码**，其指令其实就是一个**四元组**（结果，运算符，操作数1，操作数2，例如%3=add i32 %1, %2）不难发现，这其实就是**四元式**。所以从四元式生成LLVM可以直接一步到位，本章也就不作过多赘述。
+
 
 #### 2. 主函数与常量表达式
 
@@ -892,7 +891,7 @@ UnaryOp    → '+' | '−'
 对于常量表达式，这里只包含常数的四则运算，正负号操作。这时候就需要用到之前的Value思想。举个例子，对于 `1+2+3*4`，根据文法生成的AST样式如下
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/1-1.png" style="zoom:50%;" />
 
-##### <p align="center">图 1-1 简单四则运算AST参考图</p>
+
 在生成的时候，顺序是从左到右，从上到下。所以先生成 `1`，然后生成 `2`，然后生成 `1+2`，然后生成 `3`，然后生成 `4`，然后生成 `3*4`，最后生成 `1+2+3*4`。那对于1+2的**AddExp**，在其生成的指令中，1和2的值就类似于综合属性，即从AddExp的实例的值（3）由产生式右边的值（1和2）推导出来。而对于3\*4的**MulExp**，其生成的指令中3和4的值就类似于继承属性，即从MulExp的实例的值（12）由产生式左边的值（3和4）推导出来。最后，对于1+2+3\*4的**AddExp**，生成指令的实例的值就由产生式右边的AddExp的值（3）和MulExp的值（12）推导出来。
 
 同理，对于数字前的**正负**，可以看做是**0和其做一次AddExp**，即+1其实就是0+1 （其实正号甚至都不用去管他） ，-1其实就是0-1。所以在生成代码的时候，可以当作一个特殊的AddExp来处理。
@@ -1084,7 +1083,6 @@ define dso_local i32 @main() {
 
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/2-1.png" style="zoom:50%;" />
 
-##### <p align="center">图 2-1 完整符号表与栈式符号表示意图</p>
 ##### （4）测试样例
 源程序
 ```c
@@ -1299,7 +1297,6 @@ Stmt    → 'if' '(' Cond ')' Stmt1 [ 'else' Stmt2 ]  (BasicBlock3)
 为了方便说明，对上述文法的两个Stmt编号为Stmt1和2。在这条语句之后基本块假设叫BasicBlock3。不难发现，条件判断的逻辑如左下图。
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/4-1.png" style="zoom:50%;" />
 
-##### <p align="center">图 4-1 条件判断流程示意图与基本块流图</p>
 
 首先进行Cond结果的判断，如果结果为**1**则进入**Stmt1**，如果Cond结果为**0**，若文法有else则将进入**Stmt2**，否则进入下一条文法的基本块**BasicBlock3**。在Stmt1或Stmt2执行完成后都需要跳转到BasicBlock3。对于一个llvm程序来说，对一个含else的条件分支，其基本块构造可以如右上图所示。
 
@@ -1334,8 +1331,9 @@ LOrExp  → LOrExp '||' LAndExp
 - 对于连与来说，只要其中一个LAndExp或最后一个EqExp为0，则直接进入下一个LOrExp。如果当前为连或的最后一项，则直接跳转Stmt2（有else）或BasicBlock3（没else）
 
 上述两条规则即为短路求值的最核心算法，示意图如下。
+
 ![](https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/4-2.png)
-##### <p align="center">图 4-2 短路求值算法示意图</p>
+
 ##### （3）测试样例
 ```c
 int a=1;
@@ -1491,7 +1489,6 @@ for(initialization;condition;incr/decr){
 
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/5-1.png" style="zoom:33%;" />
 
-##### <p align="center">图 5-1 for循环流程图</p>
 ##### （2）break/continue
 
 对于`break`和`continue`，直观理解为，break**跳出循环**，continue**跳过本次循环**。再通俗点说就是，break跳转到的是**BasicBlock**，而continue跳转到的是**Cond**。这样就能达到目的了。所以，对于循环而言，跳转的位置很重要。这也是同学们在编码的时候需要着重注意的点。
@@ -1500,7 +1497,7 @@ for(initialization;condition;incr/decr){
 
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/5-2.png" style="zoom:33%;" />
 
-##### <p align="center">图 5-2 for循环完整流程图</p>
+
 
 ##### （3）测试样例
 ```c
@@ -1671,7 +1668,7 @@ getElementPtr指令的工作是计算地址。其本身不对数据做任何访�
 
 <img src="https://github.com/echo17666/BUAA-Compiler2023-llvm-pro/raw/master/image/6-1.png" style="zoom:50%;" />
 
-##### <p align="center">图 6-1 getElementPtr示意图</p>
+
 
 对于 **`%6`** ，其只有一组索引**i32 4**，所以索引使用基本类型为**i32**，基地址为 **`%5`** ，索引值为4，所以指针相对于%5（21号格子）前进了**4个i32**类型，即指向了25号格子，返回类型为i32*。
 
