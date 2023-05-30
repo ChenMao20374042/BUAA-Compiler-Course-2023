@@ -2376,7 +2376,7 @@ move $t4, $v0
 
 ### （一）初识SSA
 
-首先欢迎各位同学勇于突破自我，来到编译器优化的部分！本部分优化教程适用于以SSA形式语言作为中端的编译器，例如课程组推荐的中端语言llvm。我们将从了解什么是SSA开始，到构建SSA，再到后面以SSA为基础的各种优化。编译器优化的道路可能充满各种bug与未知的困难，但是在完成一个又一个优化的过程中，你一定会充满成就感！经过mem2reg，你的代码将被去除掉大部分alloca和load指令；经过DCE(Dead Code Elimination)，你的代码会减少很多废话文学；经过func_inline，大部分程序经过你的编译器可能只剩下了一个函数；经过GVN&GCM，你将灵活的重排指令，创造更多可优化的空间...... 不过，万丈高楼平地起，我们先从初识SSA入手，进入中端优化的世界。
+本部分优化教程适用于以SSA形式语言作为中端的编译器，例如课程组推荐的中端语言llvm。我们将从了解什么是SSA开始，到构建SSA，再到后面以SSA为基础的各种优化。
 
 #### 概述
 
@@ -2418,7 +2418,7 @@ z = x_2 + 1;	//	语句4
 
 这里我们用了一个新变量x_2来替代x的重赋值操作，同时将所有后续用到x的地方均换成了x_2。这样的话，我们就会明显的看出y和z的值大概率是不一样的，使得优化过程不会因此出错。
 
-这样的一个小小的例子应该能让大家了解到SSA形式程序的好处，也展示了一个将非SSA程序转换成SSA程序的方法。但实际的情况可能比上面的程序复杂的多，如：
+上述的例子展示了一个将非SSA程序转换成SSA程序的方法。但实际的情况可能比上面的程序复杂的多，如：
 
 ```
 x = input()
@@ -2429,9 +2429,9 @@ else
 print(y)
 ```
 
-上面的伪代码描述了一个存在分支的情况。这样的程序能不能够被叫做SSA程序呢？答案是不能。因为显然，按照SSA的定义，y变量在程序中被赋值了两次（尽管这两条语句不可能都被执行）。
+上面的伪代码描述了一个存在分支的情况。这个例子不属于SSA，因为程序中的y变量被赋值了两次，违背了SSA的定义（尽管这两条语句不可能都被执行）。
 
-那么我们应该怎么将这种程序转化为SSA呢？如果我们仍采用上述的命名方法，产生y_2来替代第二次命名，那么最后的print(y)应该用y还是y_2呢？我们直观的一个想法就是，如果有一种运算能够智能的判断选择y还是y_2就好了。没错，因此我们需要引入新的运算方法，$\phi$运算。
+如果仍采用上述的命名方法，产生y_2来替代第二次命名，那么最后的print(y)应该用y还是y_2呢？我们直观的一个想法就是，如果有一种运算能够智能的判断选择y还是y_2就好了。因此我们需要引入新的运算方法，$\phi$运算。
 
 #### $\phi$运算
 
@@ -2458,11 +2458,7 @@ y_3 = phi(y_1, y_2)		//	语句1
 y_5 = phi(y_3, y_4)		//	语句2
 ```
 
-在上述代码中，上述语句2中的y_3应该取什么值（语句1运算前的值还是语句1运算后的值）？
-
-
-
-答案是语句1运算前的值。一个直观的理解是每个$\phi$语句是独立且平等的，这里的顺序只是一种方便记录的形式。每条$\phi$语句都对应了一组数据流信息，而在进入这个基本块之前，这些数据流是不互相影响的，因此在一个基本块的$\phi$语句也应该保持这种独立性，同时执行，或者说是**并行执行**。
+在上述代码中，上述语句2中的y_3应该取语句1运算前的值。一个直观的理解是每个$\phi$语句是独立且平等的，这里的顺序只是一种方便记录的形式。每条$\phi$语句都对应了一组数据流信息，而在进入这个基本块之前，这些数据流是不互相影响的，因此在一个基本块的$\phi$语句也应该保持这种独立性，同时执行，或者说是**并行执行**。
 
 因此一定要记住多条$\phi$语句逻辑上要并行执行。至于我们怎么用串行模拟实现这种并行性，是我们之后需要讨论的。
 
@@ -2738,17 +2734,39 @@ define i32 @main() {
 
 ```
 int main() {
-	int a = 24;   
-	int b = 25; /* 无用代码 */   
-	int c;   
-	c = a << 2;   
-	return c;   
-	b = 24; /* 不可达代码 */   
-	return 0; 
+	int x = 24;
+	int y = 25; /* 无用代码 */
+	x = x + 2;
+	y = x + 1;
+	return 0;
+	b = 24; /* 不可达代码 */
+	return 0;
+}
+```
+
+下面给出一个优化前后对比的样例：
+
+```
+//	仅经过Mem2reg
+define i32 @main() {
+0:
+	%1 = add i32 24, 2
+	%2 = add i32 %1, 1
+	ret i32 0
+}
+```
+
+```
+//	经过mem2reg+DCE
+define i32 @main() {
+0:
+	ret i32 0
 }
 ```
 
 基于SSA的形式，我们很容易做死代码删除。整体思路为沿着def-use链将有用的代码全部找出来标记，这样没有被标记过的代码就是死代码。但是要注意的是我们删除代码的同时会改变控制流图等一系列结构，因此我们要在做删除的同时谨慎维护原有的数据结构。
+
+
 
 #### 实现
 
@@ -2788,6 +2806,241 @@ GVN(Global Variable Numbering) 全局值编号：为全局的变量进行编号�
 GCM(Global Code Motion) 全局代码移动：根据Value之间的依赖关系，将代码的位置重新安排，从而使得一些不必要（不会影响结果）的代码尽可能少执行。
 
 附官网论文链接：https://c9x.me/compile/bib/click-gvn.pdf
+
+样例如下：
+
+```
+//	源程序
+const int N = 10;
+int a[10] = {0,1,2,3,4,5,6,7,8,9};
+int main()
+{
+    int i = 2,j = 5;
+    const int a1 = 1, a2 = 2;
+    i = (-(i * j) + 0 + a[1] * 1 - 1/2) * 5;
+    j = 7*5923%56*57 + (a1+a2-(89/2*36-53) /1*6-2*(45*56/85-56+35*56/4-9));
+    int k = +-+6;
+    i = 0;
+    while (i <= 100) {
+		a[0] = a[0] + k * k;
+		a[1] = a[1] + k * k;
+		a[2] = a[2] + k * k;
+		a[3] = a[3] + k * k;
+		a[4] = a[4] + k * k;
+		a[5] = a[5] + k * k;
+		a[6] = a[6] + k * k;
+		a[7] = a[7] + k * k;
+		a[8] = a[8] + k * k;
+		a[9] = a[9] + k * k;
+		i = i + 1;
+	}
+	i = 0;
+	while (i < 10) {
+		printf("%d, ", a[i]);
+		i = i + 1;
+	}
+	printf("\n%d, %d, %d\n", i, j, k);
+    return 0;
+}
+```
+
+```
+//	仅经过mem2reg
+@g_a = dso_local global [10 x i32] [i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9]
+@g_N = dso_local global i32 10
+define dso_local i32 @main() {
+b1:
+	%v10 = mul i32 2, 5
+	%v11 = sub i32 0, %v10
+	%v12 = add i32 %v11, 0
+	%v13 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 1
+	%v14 = load i32, i32* %v13
+	%v15 = mul i32 %v14, 1
+	%v16 = add i32 %v12, %v15
+	%v17 = sdiv i32 1, 2
+	%v18 = sub i32 %v16, %v17
+	%v19 = mul i32 %v18, 5
+	%v21 = mul i32 7, 5923
+	%v22 = srem i32 %v21, 56
+	%v23 = mul i32 %v22, 57
+	%v24 = add i32 1, 2
+	%v25 = sdiv i32 89, 2
+	%v26 = mul i32 %v25, 36
+	%v27 = sub i32 %v26, 53
+	%v28 = sdiv i32 %v27, 1
+	%v29 = mul i32 %v28, 6
+	%v30 = sub i32 %v24, %v29
+	%v31 = mul i32 45, 56
+	%v32 = sdiv i32 %v31, 85
+	%v33 = sub i32 %v32, 56
+	%v34 = mul i32 35, 56
+	%v35 = sdiv i32 %v34, 4
+	%v36 = add i32 %v33, %v35
+	%v37 = sub i32 %v36, 9
+	%v38 = mul i32 2, %v37
+	%v39 = sub i32 %v30, %v38
+	%v40 = add i32 %v23, %v39
+	%v42 = sub i32 0, 6
+	br label %b2
+b2:
+	%v155 = phi i32 [ 0, %b1 ], [ %v131, %b3 ]
+	%v48 = icmp sle i32 %v155, 100
+	br i1 %v48, label %b3, label %b4
+b3:
+	%v50 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 0
+	%v51 = load i32, i32* %v50
+	%v54 = mul i32 %v42, %v42
+	%v55 = add i32 %v51, %v54
+	%v56 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 0
+	store i32 %v55, i32* %v56
+	%v58 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 1
+	%v59 = load i32, i32* %v58
+	%v62 = mul i32 %v42, %v42
+	%v63 = add i32 %v59, %v62
+	%v64 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 1
+	store i32 %v63, i32* %v64
+	%v66 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 2
+	%v67 = load i32, i32* %v66
+	%v70 = mul i32 %v42, %v42
+	%v71 = add i32 %v67, %v70
+	%v72 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 2
+	store i32 %v71, i32* %v72
+	%v74 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 3
+	%v75 = load i32, i32* %v74
+	%v78 = mul i32 %v42, %v42
+	%v79 = add i32 %v75, %v78
+	%v80 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 3
+	store i32 %v79, i32* %v80
+	%v82 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 4
+	%v83 = load i32, i32* %v82
+	%v86 = mul i32 %v42, %v42
+	%v87 = add i32 %v83, %v86
+	%v88 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 4
+	store i32 %v87, i32* %v88
+	%v90 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 5
+	%v91 = load i32, i32* %v90
+	%v94 = mul i32 %v42, %v42
+	%v95 = add i32 %v91, %v94
+	%v96 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 5
+	store i32 %v95, i32* %v96
+	%v98 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 6
+	%v99 = load i32, i32* %v98
+	%v102 = mul i32 %v42, %v42
+	%v103 = add i32 %v99, %v102
+	%v104 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 6
+	store i32 %v103, i32* %v104
+	%v106 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 7
+	%v107 = load i32, i32* %v106
+	%v110 = mul i32 %v42, %v42
+	%v111 = add i32 %v107, %v110
+	%v112 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 7
+	store i32 %v111, i32* %v112
+	%v114 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 8
+	%v115 = load i32, i32* %v114
+	%v118 = mul i32 %v42, %v42
+	%v119 = add i32 %v115, %v118
+	%v120 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 8
+	store i32 %v119, i32* %v120
+	%v122 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 9
+	%v123 = load i32, i32* %v122
+	%v126 = mul i32 %v42, %v42
+	%v127 = add i32 %v123, %v126
+	%v128 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 9
+	store i32 %v127, i32* %v128
+	%v131 = add i32 %v155, 1
+	br label %b2
+b4:
+	br label %b5
+b5:
+	%v154 = phi i32 [ 0, %b4 ], [ %v144, %b6 ]
+	%v137 = icmp slt i32 %v154, 10
+	br i1 %v137, label %b6, label %b7
+b6:
+	%v140 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 %v154
+	%v141 = load i32, i32* %v140
+	call void @putint(i32 %v141)
+	%v144 = add i32 %v154, 1
+	br label %b5
+b7:
+	call void @putint(i32 %v154)
+	call void @putint(i32 %v40)
+	call void @putint(i32 %v42)
+	ret i32 0
+}
+```
+
+```
+//	Mem2reg+GVNGCM
+@g_a = dso_local global [10 x i32] [i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9]
+define dso_local i32 @main() {
+b1:
+	%v122 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 9
+	%v114 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 8
+	%v106 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 7
+	%v98 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 6
+	%v90 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 5
+	%v82 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 4
+	%v74 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 3
+	%v66 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 2
+	%v58 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 1
+	%v50 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 0
+	br label %b2
+b2:
+	%v155 = phi i32 [ 0, %b1 ], [ %v131, %b3 ]
+	%v48 = icmp sle i32 %v155, 100
+	br i1 %v48, label %b3, label %b4
+b3:
+	%v51 = load i32, i32* %v50
+	%v55 = add i32 %v51, 36
+	store i32 %v55, i32* %v50
+	%v59 = load i32, i32* %v58
+	%v63 = add i32 %v59, 36
+	store i32 %v63, i32* %v58
+	%v67 = load i32, i32* %v66
+	%v71 = add i32 %v67, 36
+	store i32 %v71, i32* %v66
+	%v75 = load i32, i32* %v74
+	%v79 = add i32 %v75, 36
+	store i32 %v79, i32* %v74
+	%v83 = load i32, i32* %v82
+	%v87 = add i32 %v83, 36
+	store i32 %v87, i32* %v82
+	%v91 = load i32, i32* %v90
+	%v95 = add i32 %v91, 36
+	store i32 %v95, i32* %v90
+	%v99 = load i32, i32* %v98
+	%v103 = add i32 %v99, 36
+	store i32 %v103, i32* %v98
+	%v107 = load i32, i32* %v106
+	%v111 = add i32 %v107, 36
+	store i32 %v111, i32* %v106
+	%v115 = load i32, i32* %v114
+	%v119 = add i32 %v115, 36
+	store i32 %v119, i32* %v114
+	%v123 = load i32, i32* %v122
+	%v127 = add i32 %v123, 36
+	store i32 %v127, i32* %v122
+	%v131 = add i32 %v155, 1
+	br label %b2
+b4:
+	br label %b5
+b5:
+	%v154 = phi i32 [ 0, %b4 ], [ %v144, %b6 ]
+	%v137 = icmp slt i32 %v154, 10
+	br i1 %v137, label %b6, label %b7
+b6:
+	%v140 = getelementptr inbounds [10 x i32], [10 x i32]* @g_a, i32 0, i32 %v154
+	%v141 = load i32, i32* %v140
+	call void @putint(i32 %v141)
+	%v144 = add i32 %v154, 1
+	br label %b5
+b7:
+	call void @putint(i32 %v154)
+	call void @putint(i32 -8894)
+	call void @putint(i32 -6)
+	ret i32 0
+}
+```
 
 #### GVN
 
